@@ -41,6 +41,11 @@ def preprocess():
 
 def compare_two_timeseries(A, B, window):
     # checking if windows of both time series correponsend T_A=A is different than T_A=B
+    # matrix profile is literally the euclidean distance between two subsequences in a sequence
+    # for each window sized subsequence (window rows of time series) calculate the euclidean distance all other possible
+    # subsequences in time series; therefore distance of 0 means it is exactly the same time series subsequence,
+    # patterns that are similar have a mp closer to 0
+    # used to detect motifs(repeating patterns, reoccuring low matrix profile) and anomalies(large matrix profiles outliers)
     mp = stumpy.stump(T_A=A, m=window, T_B=B, ignore_trivial=False)
     A_motif_index = mp[:,0].argmin()
     plt.xlabel("Subsequence")
@@ -88,7 +93,10 @@ def get_cluster_corr_mean(df, cluster_num):
 
 def get_cov_matrix(df):
     # Get matrix of all store numbers
-    pass
+    split_data = create_hier_cluster_store(df)
+    for cluster in split_data.keys():
+        curr = split_data[cluster]
+
 
 if __name__ == "__main__":
 
@@ -113,6 +121,13 @@ if __name__ == "__main__":
     print(dt1)
     print("Days between")
     print(datediff)
+
+    print(df_train.isnull().sum())
+    print(df_train.shape)
+    # Drop columns that have nas, we can impute and use later
+    e_df = df_train.dropna(axis=1, how='any')
+    get_cov_matrix(e_df)
+
     '''
     Sales is what we will be predicting so we should look at the timeseries
     Time series is daily and is associated with a unique store_nbr each day,
