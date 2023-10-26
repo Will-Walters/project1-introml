@@ -6,6 +6,7 @@ import stumpy
 import numpy as np
 import matplotlib.pyplot as plt
 #from pandas_profiling import ProfileReport
+import itertools
 
 
 
@@ -61,7 +62,7 @@ def create_store_specific_df(large_df):
     return [df for _, df in large_df.groupby('store_nbr')]
 
 def create_hier_cluster_store(large_df):
-    unique_clusters = list(large_df[:,'cluster'].unique())
+    unique_clusters = list(large_df.loc[:,'cluster'].unique())
     new_df = large_df.groupby(by=["cluster"])
     tree = dict()
     for cluster in unique_clusters:
@@ -131,7 +132,18 @@ if __name__ == "__main__":
 
     for i in hk:
         stores_df = hier_dict[i]
+        temp_dict = dict()
         for s in stores_df:
+            store_nbr = s.loc[:, "store_nbr"].values[0]
+            ssales = (pd.Series(s.loc[:,'sales'])).reset_index(drop=True)
+            temp_dict[('storenum_'+str(store_nbr))] = ssales
+            if 'date' not in temp_dict.keys():
+                temp_dict['date'] = pd.Series(s.loc[:,'date'])
+        temp_df = pd.DataFrame(temp_dict)
+        temp_df.set_index('date', inplace=True)
+        print(temp_df.corr())
+
+
 
 
     #get_cov_matrix(e_df)
