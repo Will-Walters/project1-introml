@@ -3,7 +3,11 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import stumpy
+import numpy as np
 import matplotlib.pyplot as plt
+#from pandas_profiling import ProfileReport
+
+
 
 
 def preprocess():
@@ -36,6 +40,7 @@ def preprocess():
 
 
 def compare_two_timeseries(A, B, window):
+    # checking if windows of both time series correponsend T_A=A is different than T_A=B
     mp = stumpy.stump(T_A=A, m=window, T_B=B, ignore_trivial=False)
     A_motif_index = mp[:,0].argmin()
     plt.xlabel("Subsequence")
@@ -46,16 +51,44 @@ def compare_two_timeseries(A, B, window):
                 s=100)
     plt.show()
 
-    def check_1d_store():
-        pass
-    def check_timeseries(t):
-        nas = sum(pd.isna(t))
-        if nas > 0:
-            print("Warning")
-            print(nas)
-            print("Missing values")
-        else:
-            print("No missing values")
+def create_store_specific_df(large_df):
+    # Returns a list of each stores df
+    return [df for _, df in large_df.groupby('store_nbr')]
+
+def create_hier_cluster_store(large_df):
+    unique_clusters = list(large_df[:,'cluster'].unique())
+    new_df = large_df.groupby(by=["cluster"])
+    tree = dict()
+    for cluster in unique_clusters:
+        curr = create_store_specific_df(new_df.get_group(cluster))
+        tree[cluster] = curr
+    # Returns a dictionary(cluster_number : list of store dfs)
+    return tree
+
+def check_1d_store():
+    # Check
+    pass
+def check_timeseries(t):
+    # Check series for na and impute
+    nas = sum(pd.isna(t))
+    if nas > 0:
+        print("Warning")
+        print(nas)
+        print("Missing values")
+        print("Imputing by forwardfill")
+        t.ffill(inplace=True)
+        print("Sanity check")
+        print(sum(pd.isna(t)))
+    else:
+        print("No missing values")
+
+def get_cluster_corr_mean(df, cluster_num):
+    # Get details on avg correlation between store sales in same cluster
+    pass
+
+def get_cov_matrix(df):
+    # Get matrix of all store numbers
+    pass
 
 if __name__ == "__main__":
 
@@ -95,5 +128,8 @@ if __name__ == "__main__":
     '''
 
     # First I'm using a package called stumpy to compare two time series for similarities, hopefully clusters are similar
+
+    # profile = ProfileReport(df_train, tsmode=True, sortby="Date Local")
+    # profile.to_file('profile_report.html')
 
 
