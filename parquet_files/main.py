@@ -129,7 +129,7 @@ if __name__ == "__main__":
     e_df = df_train.dropna(axis=1, how='any')
     hier_dict = create_hier_cluster_store(e_df)
     hk = hier_dict.keys()
-
+    sales_df_dict = dict()
     for i in hk:
         stores_df = hier_dict[i]
         temp_dict = dict()
@@ -141,7 +141,15 @@ if __name__ == "__main__":
                 temp_dict['date'] = pd.Series(s.loc[:,'date'])
         temp_df = pd.DataFrame(temp_dict)
         temp_df.set_index('date', inplace=True)
+        sales_df_dict[i] = temp_df
         print(temp_df.corr())
+
+    for i in list(itertools.combinations(hk, 2)):
+        print(i)
+        s1, s2 = i
+        df1 = sales_df_dict[s1]
+        df2 = sales_df_dict[s2]
+        print(df1.corrwith(df2))
 
 
 
