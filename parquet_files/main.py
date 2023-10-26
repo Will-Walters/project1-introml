@@ -126,7 +126,16 @@ if __name__ == "__main__":
     print(df_train.shape)
     # Drop columns that have nas, we can impute and use later
     e_df = df_train.dropna(axis=1, how='any')
-    get_cov_matrix(e_df)
+    hier_dict = create_hier_cluster_store(e_df)
+    hk = hier_dict.keys()
+
+    for i in hk:
+        stores_df = hier_dict[i]
+        for s in stores_df:
+
+
+    #get_cov_matrix(e_df)
+
 
     '''
     Sales is what we will be predicting so we should look at the timeseries
