@@ -139,17 +139,19 @@ if __name__ == "__main__":
             temp_dict[('storenum_'+str(store_nbr))] = ssales
             if 'date' not in temp_dict.keys():
                 temp_dict['date'] = pd.Series(s.loc[:,'date'])
+            
         temp_df = pd.DataFrame(temp_dict)
         temp_df.set_index('date', inplace=True)
         sales_df_dict[i] = temp_df
         print(temp_df.corr())
+    print(sales_df_dict[1].shape)
 
-    for i in list(itertools.combinations(hk, 2)):
-        print(i)
-        s1, s2 = i
-        df1 = sales_df_dict[s1]
-        df2 = sales_df_dict[s2]
-        print(df1.corrwith(df2))
+    # for i in list(itertools.combinations(hk, 2)):
+    #     print(i)
+    #     s1, s2 = i
+    #     df1 = sales_df_dict[s1]
+    #     df2 = sales_df_dict[s2]
+    #     print(df1.corrwith(df2))
 
 
 
