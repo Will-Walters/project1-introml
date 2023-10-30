@@ -10,7 +10,7 @@ import itertools
 import pickle
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.sequence import TimeseriesGenerator
-from sklearn.preprocessing import MinMaxScaler, StandardScaler, OneHotEncoder
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, OneHotEncoder, MaxAbsScaler
 import tensorflow as tf
 
 
@@ -165,9 +165,15 @@ def lstm_trainer(df, w, batch):
     # store_nbr, onpromotion, store_type, cluster ; sales
     convert_dict = {'store_nbr':'category','onpromotion':'category','store_type':'category','cluster':'category','sales':float}
     df = df.astype(convert_dict)
-    df = OneHotEncoder().fit_transform(df)
-    df = MinMaxScaler().fit_transform(df)
-    train_X, test_X, train_y, test_y = train_test_split(df, df[:,'sales'], test_size=0.2, random_state=12, shuffle=False)
+    #encoder = OneHotEncoder()
+    #df1 = df.loc[:, df.columns !='sales']
+    #df1 = encoder.fit_transform(df1)
+    scaler = MinMaxScaler()
+    df['sales'] = scaler.fit_transform(df['sales'].shape(1, -1))
+    #df.loc[:, df.columns !='sales'] = df1
+    df = pd.get_dummies(df)
+    print(type(df))
+    train_X, test_X, train_y, test_y = train_test_split(df, df[:,'sales'], test_size=0.2, random_state=12, shuffle=True)
     train_generator = TimeseriesGenerator(train_X, train_y,length=w,sampling_rate=1,batch_size=batch)
     test_generator = TimeseriesGenerator(test_X, test_y, length=w, sampling_rate=1, batch_size=batch)
     model = tf.keras.Sequential()
@@ -243,7 +249,9 @@ if __name__ == "__main__":
     #     print(len(dfs_config[1][i].keys()))
     print(df_dict['BABY CARE_sales_51_17_01.parquet'].describe(include='all'))
     each_fam = each_family_total_df(dfs_config,df_dict)
+    tf.config.list_physical_devices('GPU')
     for i in each_fam.keys():
+        name = i
         print(i)
         lstm_trainer(each_fam[i], 7, 32)
 
