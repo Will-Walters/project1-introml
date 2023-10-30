@@ -160,7 +160,7 @@ def read_a1():
 # visualize
 def visualize_ts(family, df, title):
     for c in ['sales']:
-        fig = px.histogram(df, x="date", y=c, histfunc="avg", title="Histogram on Date Axes")
+        fig = px.histogram(df, x="date", y=c, histfunc="avg", title=title)
         fig.update_traces(xbins_size="M1")
         fig.update_xaxes(showgrid=True, ticklabelmode="period", dtick="M1", tickformat="%b\n%Y")
         fig.update_layout(bargap=0.1)
@@ -302,6 +302,7 @@ if __name__ == "__main__":
         name = str(i).replace('/','&') +"_a1.parquet"
         cur = df_dict[name]
         df_filtered = cur.groupby('store_nbr').filter(lambda x: (x['sales'].mean() >= 1))
+        # See what stores have deterministic sales
         print(len(df_filtered)-len(cur))
         # look at each cluster
         df_clustered = df_filtered.groupby('cluster')
