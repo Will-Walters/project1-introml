@@ -12,6 +12,8 @@ from sklearn.model_selection import train_test_split
 from keras.preprocessing.sequence import TimeseriesGenerator
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, OneHotEncoder, MaxAbsScaler
 import tensorflow as tf
+import plotly.express as px
+import plotly.graph_objects as go
 
 
 
@@ -145,6 +147,37 @@ def read_01():
             df_dict[file] = pd.read_parquet(file)
     return df_dict
 
+def read_a1():
+    df_dict = dict()
+    for file in os.listdir('.'):
+        if file.endswith('a1.parquet'):
+            print(file)
+            df_dict[file] = pd.read_parquet(file)
+    return df_dict
+
+
+
+# visualize
+def visualize_ts(family, df, title):
+    for c in ['sales']:
+        fig = px.histogram(df, x="date", y=c, histfunc="avg", title="Histogram on Date Axes")
+        fig.update_traces(xbins_size="M1")
+        fig.update_xaxes(showgrid=True, ticklabelmode="period", dtick="M1", tickformat="%b\n%Y")
+        fig.update_layout(bargap=0.1)
+        fig.add_trace(go.Scatter(mode="markers", x=df["date"], y=df[c], name="daily", opacity=0.35))
+        # fig.update_xaxes(
+        #     rangeslider_visible=True,
+        #     rangeselector=dict(
+        #         buttons=list([
+        #             dict(count=1, label="1m", step="month", stepmode="backward"),
+        #             dict(count=6, label="6m", step="month", stepmode="backward"),
+        #             dict(count=1, label="YTD", step="year", stepmode="todate"),
+        #             dict(count=1, label="1y", step="year", stepmode="backward"),
+        #             dict(step="all")
+        #         ])
+        #     )
+        # )
+        fig.show()
 
 # modeling
 
@@ -231,34 +264,57 @@ if __name__ == "__main__":
     # print(df_train.shape)
     # Drop columns that have nas, we can impute and use later
     #startup_01()
-    dfs_config = None
-    with open('01_df_arch.pickle', 'rb') as handle:
-        dfs_config = pickle.load(handle)
+    # dfs_config = None
+    # with open('01_df_arch.pickle', 'rb') as handle:
+    #     dfs_config = pickle.load(handle)
+    #
+    # df_dict = read_01()
+    # # for c in dfs_config.keys():
+    # #     for s in dfs_config[c].keys():
+    # #         for f in dfs_config[c][s].keys():
+    # #             df = df_dict[dfs_config[c][s][f]]
+    # #             print(dfs_config[c][s][f])
+    # #             print(df.columns)
+    # #             print((df.loc[:, 'sales']).describe())
+    # # print(len(dfs_config.keys()))
+    # # print(len(dfs_config[1].keys()))
+    # # for i in dfs_config[1].keys():
+    # #     print(len(dfs_config[1][i].keys()))
+    # print(df_dict['BABY CARE_sales_51_17_01.parquet'].describe(include='all'))
+    # each_fam = each_family_total_df(dfs_config,df_dict)
+    print(tf.config.list_physical_devices('GPU'))
+    # for i in each_fam.keys():
+    #     name = str(i).replace('/','&')+"_a1"+".parquet"
+    #     each_fam[i].to_parquet(name)
+    # li = list(each_fam.keys())
+    # with open('families_a1.pickle', 'wb') as handle:
+    #     pickle.dump(li, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    df_dict = read_01()
-    # for c in dfs_config.keys():
-    #     for s in dfs_config[c].keys():
-    #         for f in dfs_config[c][s].keys():
-    #             df = df_dict[dfs_config[c][s][f]]
-    #             print(dfs_config[c][s][f])
-    #             print(df.columns)
-    #             print((df.loc[:, 'sales']).describe())
-    # print(len(dfs_config.keys()))
-    # print(len(dfs_config[1].keys()))
-    # for i in dfs_config[1].keys():
-    #     print(len(dfs_config[1][i].keys()))
-    print(df_dict['BABY CARE_sales_51_17_01.parquet'].describe(include='all'))
-    each_fam = each_family_total_df(dfs_config,df_dict)
-    tf.config.list_physical_devices('GPU')
-    for i in each_fam.keys():
-        name = i
-        print(i)
-        lstm_trainer(each_fam[i], 7, 32)
+    df_dict = read_a1()
 
+    with open('families_a1.pickle', 'rb') as handle:
+        families_config = pickle.load(handle)
 
+    # what stores do not sell certain products?
+    # drop stores with mean 0, can recover later with full list of store_nbrs, and check what is missing in families
 
-
-
+    for i in families_config:
+        name = str(i).replace('/','&') +"_a1.parquet"
+        cur = df_dict[name]
+        df_filtered = cur.groupby('store_nbr').filter(lambda x: (x['sales'].mean() >= 1))
+        print(len(df_filtered)-len(cur))
+        # look at each cluster
+        df_clustered = df_filtered.groupby('cluster')
+        clusters = list(df_filtered.loc[:,'cluster'].unique())
+        for j in clusters:
+            clu = df_clustered.get_group(j)
+            stores = list(clu.loc[:,'store_nbr'].unique())
+            sto = clu.groupby('store_nbr').get_group(stores[0])
+            visualize_ts(i, sto, 'store')
+            visualize_ts(i, clu, 'cluster')
+            break
+        visualize_ts(i,df_filtered,'family')
+        break
 
 
 
