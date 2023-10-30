@@ -14,7 +14,7 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler, OneHotEncoder, M
 import tensorflow as tf
 import plotly.express as px
 import plotly.graph_objects as go
-
+from prettytable import PrettyTable
 
 
 
@@ -232,6 +232,11 @@ def lstm_trainer(df, w, batch):
     predictions = model.predict_generator(test_generator)
     print(predictions.shape[0])
 
+def what_stores_sales_zero(df):
+    df_filtered = cur.groupby('store_nbr').filter(lambda x: (x['sales'].mean() == 0))
+    stores = list(df_filtered.loc[:,'store_nbr'].unique())
+    return stores
+
 
 
 
@@ -297,25 +302,45 @@ if __name__ == "__main__":
 
     # what stores do not sell certain products?
     # drop stores with mean 0, can recover later with full list of store_nbrs, and check what is missing in families
-
+    family_store_zeros = dict()
+    summ = dict()
+    new_dfs = dict()
     for i in families_config:
         name = str(i).replace('/','&') +"_a1.parquet"
         cur = df_dict[name]
-        df_filtered = cur.groupby('store_nbr').filter(lambda x: (x['sales'].mean() >= 1))
-        # See what stores have deterministic sales
-        print(len(df_filtered)-len(cur))
-        # look at each cluster
-        df_clustered = df_filtered.groupby('cluster')
-        clusters = list(df_filtered.loc[:,'cluster'].unique())
-        for j in clusters:
-            clu = df_clustered.get_group(j)
-            stores = list(clu.loc[:,'store_nbr'].unique())
-            sto = clu.groupby('store_nbr').get_group(stores[0])
-            visualize_ts(i, sto, 'store')
-            visualize_ts(i, clu, 'cluster')
-            break
-        visualize_ts(i,df_filtered,'family')
-        break
+        family_store_zeros[i] = what_stores_sales_zero(cur)
+        print(i)
+        print(cur)
+        print(family_store_zeros[i])
+        print(cur.loc[:,'store_nbr'].nunique())
+        new_dfs[i] = cur[~(cur['store_nbr'].isin(family_store_zeros[i]))]
+        summ[i] = new_dfs[i].loc[:,'sales'].describe()
+        print(new_dfs[i].loc[:,'store_nbr'].nunique())
+        # df_filtered = cur.groupby('store_nbr').filter(lambda x: (x['sales'].mean() >= 1))
+        # # See what stores have deterministic sales
+        # print(len(df_filtered)-len(cur))
+        # # # look at each cluster
+        # df_clustered = cur.groupby('cluster')
+        # clusters = list(cur.loc[:,'cluster'].unique())
+        # for j in clusters:
+        #     clu = df_clustered.get_group(j)
+        #     stores = list(clu.loc[:,'store_nbr'].unique())
+        #     sto = clu.groupby('store_nbr').get_group(stores[0])
+        #     fig = px.line(sto, x='date', y='sales')
+        #     fig.show()
+            #visualize_ts(i, sto, 'store '+str(stores[0])+" of cluster "+str(j)+" "+str(i))
+            #visualize_ts(i, clu, 'cluster '+str(j)+" "+str(i))
+        #visualize_ts(i,cur,'automotive')
+        #break
+    print(family_store_zeros)
+    table = PrettyTable()
+    table.add_column('Family', list(summ.keys()))
+    table.add_column('Sales summary without irrelevant stores', list(summ.values()))
+
+    print(table)
+    print(df_dict.keys())
+    visualize_ts('books', df_dict['BOOKS_a1.parquet'], 'Pre dropped books')
+    visualize_ts('books', new_dfs['BOOKS'], 'Post dropped books')
 
 
 
