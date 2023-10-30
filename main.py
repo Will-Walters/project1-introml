@@ -339,8 +339,8 @@ if __name__ == "__main__":
 
     print(table)
     print(df_dict.keys())
-    visualize_ts('books', df_dict['BOOKS_a1.parquet'], 'Pre dropped books')
-    visualize_ts('books', new_dfs['BOOKS'], 'Post dropped books')
+    visualize_ts('books', df_dict['BABY CARE_a1.parquet'], 'Pre dropped BABY CARE')
+    visualize_ts('books', new_dfs['BABY CARE'], 'Post dropped BABY CARE')
 
 
 
