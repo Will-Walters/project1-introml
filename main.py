@@ -16,6 +16,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from prettytable import PrettyTable
 import kaleido
+import shutil
+
 
 
 
@@ -23,7 +25,7 @@ def preprocess():
     # Only run if you don't have df_train.parquet and df_test.parquet
     df_dict = dict()
     files = []
-    for file in os.listdir('.'):
+    for file in os.listdir(''):
         if file.endswith('.parquet'):
             files.append(file)
             print(file)
@@ -135,14 +137,14 @@ def startup_01():
                 print(name)
                 sales_family_dict[cluster][store_nbr][f] = name
                 g.to_parquet(name)
-    with open('01_df_arch.pickle', 'wb') as handle:
+    with open('old_data/01_df_arch.pickle', 'wb') as handle:
         pickle.dump(sales_family_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 
 def read_01():
     df_dict = dict()
-    for file in os.listdir('.'):
+    for file in os.listdir(''):
         if file.endswith('01.parquet'):
             print(file)
             df_dict[file] = pd.read_parquet(file)
@@ -150,10 +152,18 @@ def read_01():
 
 def read_a1():
     df_dict = dict()
-    for file in os.listdir('.'):
+    for file in os.listdir('/old_data'):
         if file.endswith('a1.parquet'):
             print(file)
             df_dict[file] = pd.read_parquet(file)
+    return df_dict
+
+def read_b1():
+    df_dict = dict()
+    for file in os.listdir('./Production_Data_b1'):
+        if file.endswith('b1.parquet'):
+            print(file)
+            df_dict[file] = pd.read_parquet('./Production_Data_b1/'+file)
     return df_dict
 
 
@@ -161,8 +171,8 @@ def read_a1():
 # visualize
 def visualize_ts(family, df, title):
     for c in ['sales']:
-        scaler = QuantileTransformer()
-        df.loc[:,'sales'] = scaler.fit_transform(df[['sales']])
+        # scaler = QuantileTransformer()
+        # df.loc[:,'sales'] = scaler.fit_transform(df[['sales']])
         fig = px.histogram(df, x="date", y=c, histfunc="avg", title=title)
         fig.update_traces(xbins_size="M1")
         fig.update_xaxes(showgrid=True, ticklabelmode="period", dtick="M1", tickformat="%b\n%Y")
@@ -179,8 +189,8 @@ def visualize_ts(family, df, title):
         #             dict(step="all")
         #         ])
         #     )
-        # )
-        im = "plots/"+(str(family)).replace('/','&')+"_QuantTrans_a1.png"
+        # # )
+        im = "./plots_regular/"+(str(family)).replace('/','&')+"_regular_b1.png"
         fig.write_image(im)
 
 # modeling
@@ -241,8 +251,20 @@ def what_stores_sales_zero(df):
     stores = list(df_filtered.loc[:,'store_nbr'].unique())
     return stores
 
+def get_clustered(df):
+    clusters = list(df.loc[:, 'cluster'].unique())
+    df_clustered = df.groupby('cluster')
+    temp = dict()
+    for z in clusters:
+        temp[z] = df_clustered.get_group(z)
+    return temp
 
+def get_stores_in_cluster(cluster):
+    pass
 
+def get_stores(df, choice=[]):
+    df = df.loc[df['store_nbr'].isin(choice)]
+    return df
 
 
 if __name__ == "__main__":
@@ -299,52 +321,37 @@ if __name__ == "__main__":
     # with open('families_a1.pickle', 'wb') as handle:
     #     pickle.dump(li, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    df_dict = read_a1()
-
-    with open('families_a1.pickle', 'rb') as handle:
+    df_dict = read_b1()
+    #
+    with open('./Config_b1/family_list.pickle', 'rb') as handle:
         families_config = pickle.load(handle)
+    print(families_config)
 
     # what stores do not sell certain products?
     # drop stores with mean 0, can recover later with full list of store_nbrs, and check what is missing in families
-    family_store_zeros = dict()
-    summ = dict()
-    new_dfs = dict()
-    for i in families_config:
-        name = str(i).replace('/','&') +"_a1.parquet"
-        cur = df_dict[name]
-        family_store_zeros[i] = what_stores_sales_zero(cur)
-        print(i)
-        print(cur)
-        print(family_store_zeros[i])
-        print(cur.loc[:,'store_nbr'].nunique())
-        new_dfs[i] = cur[~(cur['store_nbr'].isin(family_store_zeros[i]))]
-        summ[i] = new_dfs[i].loc[:,'sales'].describe()
-        print(new_dfs[i].loc[:,'store_nbr'].nunique())
-        visualize_ts(i,new_dfs[i],i)
+    # for i in families_config:
+    #     name = str(i).replace('/','&') +"_b1.parquet"
+    #     curr = df_dict[name]
+        #visualize_ts(i,curr,i)
         # df_filtered = cur.groupby('store_nbr').filter(lambda x: (x['sales'].mean() >= 1))
         # # See what stores have deterministic sales
         # print(len(df_filtered)-len(cur))
         # # # look at each cluster
         # df_clustered = cur.groupby('cluster')
         # clusters = list(cur.loc[:,'cluster'].unique())
-        # for j in clusters:
-        #     clu = df_clustered.get_group(j)
-        #     stores = list(clu.loc[:,'store_nbr'].unique())
-        #     sto = clu.groupby('store_nbr').get_group(stores[0])
-        #     fig = px.line(sto, x='date', y='sales')
+
+            #fig = px.line(sto, x='date', y='sales')
         #     fig.show()
             #visualize_ts(i, sto, 'store '+str(stores[0])+" of cluster "+str(j)+" "+str(i))
             #visualize_ts(i, clu, 'cluster '+str(j)+" "+str(i))
         #visualize_ts(i,cur,'automotive')
         #break
-    print(family_store_zeros)
-    table = PrettyTable()
-    table.add_column('Family', list(summ.keys()))
-    table.add_column('Sales summary without irrelevant stores', list(summ.values()))
+    #
+    # with open('./Config_b1/df_dict_b1.pickle', 'wb') as handle:
+    #     pickle.dump([i[:-11] for i in df_dict.keys()], handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    print(table)
-    print(df_dict.keys())
-    visualize_ts('books', new_dfs['AUTOMOTIVE'], 'Post dropped AUTOMOTIVE')
+    # print(df_dict.keys())
+    # visualize_ts('books', new_dfs['AUTOMOTIVE'], 'Post dropped AUTOMOTIVE')
     # with open('sales_stats.txt', 'w') as f:
     #     f.write(str(table))
 
