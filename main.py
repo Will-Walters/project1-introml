@@ -10,11 +10,12 @@ import itertools
 import pickle
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.sequence import TimeseriesGenerator
-from sklearn.preprocessing import MinMaxScaler, StandardScaler, OneHotEncoder, MaxAbsScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, OneHotEncoder, MaxAbsScaler, RobustScaler, QuantileTransformer
 import tensorflow as tf
 import plotly.express as px
 import plotly.graph_objects as go
 from prettytable import PrettyTable
+import kaleido
 
 
 
@@ -160,6 +161,8 @@ def read_a1():
 # visualize
 def visualize_ts(family, df, title):
     for c in ['sales']:
+        scaler = QuantileTransformer()
+        df.loc[:,'sales'] = scaler.fit_transform(df[['sales']])
         fig = px.histogram(df, x="date", y=c, histfunc="avg", title=title)
         fig.update_traces(xbins_size="M1")
         fig.update_xaxes(showgrid=True, ticklabelmode="period", dtick="M1", tickformat="%b\n%Y")
@@ -177,7 +180,8 @@ def visualize_ts(family, df, title):
         #         ])
         #     )
         # )
-        fig.show()
+        im = "plots/"+(str(family)).replace('/','&')+"_QuantTrans_a1.png"
+        fig.write_image(im)
 
 # modeling
 
@@ -316,6 +320,7 @@ if __name__ == "__main__":
         new_dfs[i] = cur[~(cur['store_nbr'].isin(family_store_zeros[i]))]
         summ[i] = new_dfs[i].loc[:,'sales'].describe()
         print(new_dfs[i].loc[:,'store_nbr'].nunique())
+        visualize_ts(i,new_dfs[i],i)
         # df_filtered = cur.groupby('store_nbr').filter(lambda x: (x['sales'].mean() >= 1))
         # # See what stores have deterministic sales
         # print(len(df_filtered)-len(cur))
@@ -339,8 +344,9 @@ if __name__ == "__main__":
 
     print(table)
     print(df_dict.keys())
-    visualize_ts('books', df_dict['BABY CARE_a1.parquet'], 'Pre dropped BABY CARE')
-    visualize_ts('books', new_dfs['BABY CARE'], 'Post dropped BABY CARE')
+    visualize_ts('books', new_dfs['AUTOMOTIVE'], 'Post dropped AUTOMOTIVE')
+    # with open('sales_stats.txt', 'w') as f:
+    #     f.write(str(table))
 
 
 
