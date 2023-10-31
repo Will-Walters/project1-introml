@@ -347,7 +347,7 @@ if __name__ == "__main__":
         #visualize_ts(i,cur,'automotive')
         #break
     #
-    # with open('./Config_b1/df_dict_b1.pickle', 'wb') as handle:
+    # with open('./Config_b1/family_list.pickle', 'wb') as handle:
     #     pickle.dump([i[:-11] for i in df_dict.keys()], handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     # print(df_dict.keys())
