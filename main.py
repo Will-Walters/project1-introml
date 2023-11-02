@@ -17,6 +17,7 @@ import plotly.graph_objects as go
 from prettytable import PrettyTable
 import kaleido
 import shutil
+from sklearn.linear_model import LinearRegression
 
 
 
@@ -265,6 +266,12 @@ def get_stores_in_cluster(cluster):
 def get_stores(df, choice=[]):
     df = df.loc[df['store_nbr'].isin(choice)]
     return df
+
+def regression_stats(x, y):
+    x = np.array(x).reshape((-1, 1))
+    y = np.array(y)
+    model = LinearRegression().fit(x, y)
+    return model.score(x, y)
 
 
 if __name__ == "__main__":
