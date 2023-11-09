@@ -18,6 +18,7 @@ from prettytable import PrettyTable
 import kaleido
 import shutil
 from sklearn.linear_model import LinearRegression
+from timeseries import TimeSeries
 
 
 
@@ -333,6 +334,24 @@ if __name__ == "__main__":
     with open('./Config_b1/family_list.pickle', 'rb') as handle:
         families_config = pickle.load(handle)
     print(families_config)
+
+    dairy_all_stores = TimeSeries("dairy", df_dict['DAIRY_b1.parquet'])
+    store_1_dairy = dairy_all_stores.get_store(1)
+    store_1_dairy.drop_unnecessary_for_store()
+    store_1_dairy.set_train_test()
+    # store_1_dairy.plot_acf_()
+    # store_1_dairy.run_ar_()
+    # store_1_dairy.run_ma_()
+    # store_1_dairy.run_arma_()
+    # store_1_dairy.run_arima_()
+    ps = [7]
+    ds = [i for i in range(4,7)]
+    qs = [i for i in range(2,4)]
+    print(store_1_dairy.get_best_arima_(ps, ds, qs))
+    #store_1_dairy.run_var()
+
+
+    # ok now we have the sales data for store 1 with train and test split
 
     # what stores do not sell certain products?
     # drop stores with mean 0, can recover later with full list of store_nbrs, and check what is missing in families
