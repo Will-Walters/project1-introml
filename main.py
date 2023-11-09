@@ -336,7 +336,9 @@ if __name__ == "__main__":
     print(families_config)
 
     dairy_all_stores = TimeSeries("dairy", df_dict['DAIRY_b1.parquet'])
+    print(dairy_all_stores.df.head())
     store_1_dairy = dairy_all_stores.get_store(1)
+    print(len(store_1_dairy.df))
     store_1_dairy.drop_unnecessary_for_store()
     store_1_dairy.set_train_test()
     # store_1_dairy.plot_acf_()
