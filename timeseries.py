@@ -29,12 +29,20 @@ import statsmodels.api as sm
 from statsmodels.tsa.ar_model import AutoReg
 from sklearn.metrics import mean_squared_error
 from statsmodels.tsa.arima.model import ARIMA
+import collections.abc
+#hyper needs the four following aliases to be done manually.
+collections.Iterable = collections.abc.Iterable
+collections.Mapping = collections.abc.Mapping
+collections.MutableSet = collections.abc.MutableSet
+collections.MutableMapping = collections.abc.MutableMapping
+from hts import HTSRegressor
 
         # import VAR model
 from statsmodels.tsa.api import VAR
 
 from matplotlib import pyplot
-from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from autots import AutoTS, load_daily
 
 
 def forecaster(f, grid):
@@ -59,6 +67,35 @@ class TimeSeries:
         # Need to create model for each store for each product, need to engineer other features
         # First create aggregated features, cluster sales, all sales, store sales
         # First try univariate
+
+    def create_hierarchal(self):
+        self.df = self.df.drop(
+            columns=['id', 'city', 'state', 'store_type', 'family', 'onpromotion'])
+        self.df["cluster_store"] = self.df.apply(lambda x: f"{x['cluster']}_{x['store_nbr']}", axis=1)
+        df_bottom_level = self.df.pivot(index="date", columns="cluster_store", values="sales")
+        df_middle_level = self.df.groupby(["date", "cluster"]) \
+            .sum() \
+            .reset_index(drop=False) \
+            .pivot(index="date", columns="cluster", values="sales")
+        df_total = self.df.groupby("date")["sales"] \
+            .sum() \
+            .to_frame() \
+            .rename(columns={"sales": "total"})
+        hierarchy_df = df_bottom_level.join(df_middle_level) \
+            .join(df_total)
+        hierarchy_df.index = pd.to_datetime(hierarchy_df.index)
+        self.hierarchy_df = hierarchy_df.resample("D") \
+            .sum()
+        print(f"Number of time series at the bottom level: {df_bottom_level.shape[1]}")
+        print(f"Number of time series at the middle level: {df_middle_level.shape[1]}")
+        clusters = self.df["cluster"].unique()
+        stores = self.df["cluster_store"].unique()
+
+        total = {'total': list(clusters)}
+        cluster = {k: [v for v in stores if v.startswith(str(k))] for k in clusters}
+        hierarchy = {**total, **cluster}
+        ax = hierarchy_df[hierarchy['total']].plot(title="Sales - cluster level")
+        ax.legend(bbox_to_anchor=(1.0, 1.0))
     def get_station(self, column):
         result = adfuller(self.df[column])
         print('ADF Statistic: %f' % result[0])
@@ -72,6 +109,16 @@ class TimeSeries:
         self.te.drop(columns=['date'], inplace=True)
         plot_acf(self.tr, lags=31)
         pyplot.show()
+
+    def plot_pacf_(self):
+        plot_pacf(self.tr['sales'], lags=31)
+        pyplot.show()
+
+
+    def scale_sales(self):
+        self.tr_original = self.tr
+        self.scaler = QuantileTransformer()
+        self.tr['sales'] = self.scaler.fit_transform(self.tr['sales'].reshape(-1, 1))
 
     def run_ar_(self):
         print("AR")
@@ -149,6 +196,20 @@ class TimeSeries:
         pyplot.plot(curr[2], color='red')
         pyplot.show()
         return best_name
+
+    def run_auto_ts_(self):
+        model = AutoTS(
+            forecast_length=7,
+            frequency='infer',
+            prediction_interval=0.9,
+            ensemble='auto',
+            model_list="fast",  # "superfast", "default", "fast_parallel"
+            transformer_list="fast",  # "superfast",
+            drop_most_recent=1,
+            max_generations=4,
+            num_validations=2,
+            validation_method="backwards"
+        )
     def get_store(self, s):
         curr = self.df.groupby('store_nbr').get_group(s)
         return TimeSeries(str(s), curr)

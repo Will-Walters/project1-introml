@@ -337,19 +337,26 @@ if __name__ == "__main__":
 
     dairy_all_stores = TimeSeries("dairy", df_dict['DAIRY_b1.parquet'])
     print(dairy_all_stores.df.head())
-    store_1_dairy = dairy_all_stores.get_store(1)
-    print(len(store_1_dairy.df))
-    store_1_dairy.drop_unnecessary_for_store()
-    store_1_dairy.set_train_test()
+    dairy_all_stores.create_hierarchal()
+    # store_1_dairy = dairy_all_stores.get_store(1)
+    # print(len(store_1_dairy.df))
+    # store_1_dairy.drop_unnecessary_for_store()
+    # store_1_dairy.set_train_test()
+    # # store_1_dairy.plot_acf_()
+    # # store_1_dairy.run_ar_()
+    # # store_1_dairy.run_ma_()
+    # # store_1_dairy.run_arma_()
+    # # store_1_dairy.run_arima_()
+    # ps = [7]
+    # ds = [i for i in range(4,7)]
+    # qs = [i for i in range(2,4)]
     # store_1_dairy.plot_acf_()
-    # store_1_dairy.run_ar_()
-    # store_1_dairy.run_ma_()
-    # store_1_dairy.run_arma_()
-    # store_1_dairy.run_arima_()
-    ps = [7]
-    ds = [i for i in range(4,7)]
-    qs = [i for i in range(2,4)]
-    print(store_1_dairy.get_best_arima_(ps, ds, qs))
+    # store_1_dairy.plot_pacf_()
+    # store_1_dairy.get_station('sales')
+    # store_1_dairy.scale_sales()
+    # store_1_dairy.plot_acf_()
+    # store_1_dairy.plot_pacf_()
+    # print(store_1_dairy.get_best_arima_(ps, ds, qs))
     #store_1_dairy.run_var()
 
 
