@@ -344,7 +344,9 @@ if __name__ == "__main__":
     '''
     Split train and test here and then run model
     '''
-
+    dairy_all_stores.get_train_test_of_hierarchy('total')
+    print(dairy_all_stores.tr)
+    print(dairy_all_stores.te)
     # store_1_dairy = dairy_all_stores.get_store(1)
     # print(len(store_1_dairy.df))
     # store_1_dairy.drop_unnecessary_for_store()
