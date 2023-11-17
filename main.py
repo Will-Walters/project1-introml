@@ -15,7 +15,7 @@ import tensorflow as tf
 import plotly.express as px
 import plotly.graph_objects as go
 from prettytable import PrettyTable
-import kaleido
+#import kaleido
 import shutil
 from sklearn.linear_model import LinearRegression
 from timeseries import TimeSeries
@@ -338,6 +338,13 @@ if __name__ == "__main__":
     dairy_all_stores = TimeSeries("dairy", df_dict['DAIRY_b1.parquet'])
     print(dairy_all_stores.df.head())
     dairy_all_stores.create_hierarchal()
+    print(dairy_all_stores.hierarchy_df[dairy_all_stores.hierarchy['total']])
+    print(dairy_all_stores.hierarchy)
+    print(dairy_all_stores.hierarchy_df[dairy_all_stores.hierarchy[1]])
+    '''
+    Split train and test here and then run model
+    '''
+
     # store_1_dairy = dairy_all_stores.get_store(1)
     # print(len(store_1_dairy.df))
     # store_1_dairy.drop_unnecessary_for_store()
