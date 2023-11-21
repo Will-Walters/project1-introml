@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import itertools
 import pickle
 
-#import scalecast.util
+import scalecast.util
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.sequence import TimeseriesGenerator
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, OneHotEncoder, MaxAbsScaler, RobustScaler, QuantileTransformer
@@ -17,11 +17,11 @@ import tensorflow as tf
 import plotly.express as px
 import plotly.graph_objects as go
 from prettytable import PrettyTable
-#import kaleido
+import kaleido
 import shutil
 from sklearn.linear_model import LinearRegression
 from statsmodels.tsa.stattools import adfuller
-#import scalecast
+import scalecast
 from pmdarima import auto_arima
 from sklearn.preprocessing import MinMaxScaler
 from math import floor, sqrt
@@ -92,10 +92,14 @@ class TimeSeries:
         stores = self.df["cluster_store"].unique()
 
         total = {'total': list(clusters)}
-        cluster = {k: [v for v in stores if v.startswith(str(k)) and len(str(k)) == len((str(v).split("_")[0]))] for k in clusters}
-        self.hierarchy = {**total, **cluster}
-        # ax = hierarchy_df[hierarchy['total']].plot(title="Sales - cluster level")
-        # ax.legend(bbox_to_anchor=(1.0, 1.0))
+        cluster = {str(k): [v for v in stores if v.startswith(str(k))] for k in clusters}
+        hierarchy = {**total, **cluster}
+        print(hierarchy)
+        model_bu_arima = HTSRegressor(model='auto_arima', revision_method='BU', n_jobs=0)
+        model_bu_arima = model_bu_arima.fit(self.hierarchy_df, hierarchy)
+        pred_bu_arima = model_bu_arima.predict(steps_ahead=7)
+        print(pred_bu_arima)
+
     def get_train_test_of_hierarchy(self, indexing):
         curr_df = self.hierarchy_df[self.hierarchy[indexing]]
         self.tr = curr_df.iloc[:-7, :]
