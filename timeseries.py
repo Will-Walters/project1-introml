@@ -1,4 +1,10 @@
 import os
+import collections.abc
+#hyper needs the four following aliases to be done manually.
+collections.Iterable = collections.abc.Iterable
+collections.Mapping = collections.abc.Mapping
+collections.MutableSet = collections.abc.MutableSet
+collections.MutableMapping = collections.abc.MutableMapping
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -9,7 +15,7 @@ import matplotlib.pyplot as plt
 import itertools
 import pickle
 
-import scalecast.util
+#import scalecast.util
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.sequence import TimeseriesGenerator
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, OneHotEncoder, MaxAbsScaler, RobustScaler, QuantileTransformer
@@ -17,11 +23,11 @@ import tensorflow as tf
 import plotly.express as px
 import plotly.graph_objects as go
 from prettytable import PrettyTable
-import kaleido
+#import kaleido
 import shutil
 from sklearn.linear_model import LinearRegression
 from statsmodels.tsa.stattools import adfuller
-import scalecast
+#import scalecast
 from pmdarima import auto_arima
 from sklearn.preprocessing import MinMaxScaler
 from math import floor, sqrt
@@ -29,12 +35,12 @@ import statsmodels.api as sm
 from statsmodels.tsa.ar_model import AutoReg
 from sklearn.metrics import mean_squared_error
 from statsmodels.tsa.arima.model import ARIMA
-import collections.abc
-#hyper needs the four following aliases to be done manually.
-collections.Iterable = collections.abc.Iterable
-collections.Mapping = collections.abc.Mapping
-collections.MutableSet = collections.abc.MutableSet
-collections.MutableMapping = collections.abc.MutableMapping
+# import collections.abc
+# #hyper needs the four following aliases to be done manually.
+# collections.Iterable = collections.abc.Iterable
+# collections.Mapping = collections.abc.Mapping
+# collections.MutableSet = collections.abc.MutableSet
+# collections.MutableMapping = collections.abc.MutableMapping
 from hts import HTSRegressor
 
         # import VAR model
@@ -90,21 +96,25 @@ class TimeSeries:
         print(f"Number of time series at the middle level: {df_middle_level.shape[1]}")
         clusters = self.df["cluster"].unique()
         stores = self.df["cluster_store"].unique()
-
-        total = {'total': list(clusters)}
-        cluster = {str(k): [v for v in stores if v.startswith(str(k))] for k in clusters}
-        hierarchy = {**total, **cluster}
-        print(hierarchy)
-        model_bu_arima = HTSRegressor(model='auto_arima', revision_method='BU', n_jobs=0)
-        model_bu_arima = model_bu_arima.fit(self.hierarchy_df, hierarchy)
-        pred_bu_arima = model_bu_arima.predict(steps_ahead=7)
-        print(pred_bu_arima)
-
+        c = list(clusters)
+        total = {'total': [str(x) for x in c]}
+        cluster = {str(k): [v for v in stores if v.startswith(str(k)) and len(str(k)) == len((str(v).split("_")[0]))] for k in clusters}
+        self.hierarchy = {**total, **cluster}
+        # ax = hierarchy_df[hierarchy['total']].plot(title="Sales - cluster level")
+        # ax.legend(bbox_to_anchor=(1.0, 1.0))
     def get_train_test_of_hierarchy(self, indexing):
-        curr_df = self.hierarchy_df[self.hierarchy[indexing]]
-        self.tr = curr_df.iloc[:-7, :]
-        self.te = curr_df.iloc[-7:, :]
+        #self.hierarchy_df.columns = self.hierarchy_df.columns.astype(str)
+        self.tr = self.hierarchy_df.iloc[:-7, :]
+        self.te = self.hierarchy_df.iloc[-7:, :]
 
+    def train_model(self, model_type):
+        model = HTSRegressor(model=model_type, revision_method='BU', n_jobs=0, transform=True)
+        print(self.tr)
+        print(self.hierarchy)
+        model = model.fit(self.tr, self.hierarchy)
+        predicted = model.predict(steps_ahead=7)
+        print(predicted)
+        #print(sqrt(mean_squared_error(predicted,self.te)))
     def get_station(self, column):
         result = adfuller(self.df[column])
         print('ADF Statistic: %f' % result[0])

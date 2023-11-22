@@ -344,9 +344,13 @@ if __name__ == "__main__":
     '''
     Split train and test here and then run model
     '''
+    print("****")
+    print(dairy_all_stores.hierarchy_df)
     dairy_all_stores.get_train_test_of_hierarchy('total')
+
     print(dairy_all_stores.tr)
     print(dairy_all_stores.te)
+    dairy_all_stores.train_model('auto_arima')
     # store_1_dairy = dairy_all_stores.get_store(1)
     # print(len(store_1_dairy.df))
     # store_1_dairy.drop_unnecessary_for_store()
