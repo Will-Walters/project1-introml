@@ -103,7 +103,7 @@ class TimeSeries:
         # ax = hierarchy_df[hierarchy['total']].plot(title="Sales - cluster level")
         # ax.legend(bbox_to_anchor=(1.0, 1.0))
     def get_train_test_of_hierarchy(self, indexing):
-        #self.hierarchy_df.columns = self.hierarchy_df.columns.astype(str)
+        self.hierarchy_df.columns = self.hierarchy_df.columns.astype(str)
         self.tr = self.hierarchy_df.iloc[:-7, :]
         self.te = self.hierarchy_df.iloc[-7:, :]
 
@@ -113,7 +113,13 @@ class TimeSeries:
         print(self.hierarchy)
         model = model.fit(self.tr, self.hierarchy)
         predicted = model.predict(steps_ahead=7)
-        print(predicted)
+        forecasted = predicted.iloc[-7:,:]
+        mse_dict = dict()
+        for i in forecasted.columns:
+            curr = mean_squared_error(self.te[i], forecasted[i])
+            mse_dict[i] = curr
+        print(mse_dict)
+        print(model.model)
         #print(sqrt(mean_squared_error(predicted,self.te)))
     def get_station(self, column):
         result = adfuller(self.df[column])

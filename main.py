@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import pyarrow as pa
+from prophet import Prophet
 import pyarrow.parquet as pq
 import stumpy
 import numpy as np
@@ -338,19 +339,20 @@ if __name__ == "__main__":
     dairy_all_stores = TimeSeries("dairy", df_dict['DAIRY_b1.parquet'])
     print(dairy_all_stores.df.head())
     dairy_all_stores.create_hierarchal()
+    print(dairy_all_stores.hierarchy)
+    print(dairy_all_stores.hierarchy_df.columns)
+    dairy_all_stores.get_train_test_of_hierarchy('total')
     print(dairy_all_stores.hierarchy_df[dairy_all_stores.hierarchy['total']])
     print(dairy_all_stores.hierarchy)
-    print(dairy_all_stores.hierarchy_df[dairy_all_stores.hierarchy[1]])
     '''
     Split train and test here and then run model
     '''
     print("****")
     print(dairy_all_stores.hierarchy_df)
-    dairy_all_stores.get_train_test_of_hierarchy('total')
 
     print(dairy_all_stores.tr)
     print(dairy_all_stores.te)
-    dairy_all_stores.train_model('auto_arima')
+    dairy_all_stores.train_model('holt_winters')
     # store_1_dairy = dairy_all_stores.get_store(1)
     # print(len(store_1_dairy.df))
     # store_1_dairy.drop_unnecessary_for_store()
