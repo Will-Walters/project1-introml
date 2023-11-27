@@ -108,18 +108,37 @@ class TimeSeries:
         self.te = self.hierarchy_df.iloc[-7:, :]
 
     def train_model(self, model_type):
-        model = HTSRegressor(model=model_type, revision_method='BU', n_jobs=0, transform=True)
+        model = HTSRegressor(model=model_type, revision_method='BU', n_jobs=0)
         print(self.tr)
         print(self.hierarchy)
-        model = model.fit(self.tr, self.hierarchy)
+        print(self.tr.columns)
+        scaler = StandardScaler().fit(self.tr)
+        scaled = scaler.transform(self.tr)
+        model = model.fit(scaled, self.hierarchy)
         predicted = model.predict(steps_ahead=7)
+        print(predicted.head(10))
+        predicted = scaler.inverse_transform(predicted)
+        print(predicted.head(10))
         forecasted = predicted.iloc[-7:,:]
+        print(forecasted)
         mse_dict = dict()
+        plot_dict = dict()
         for i in forecasted.columns:
             curr = mean_squared_error(self.te[i], forecasted[i])
             mse_dict[i] = curr
+            plot_dict[i] = (self.te[i], forecasted[i])
         print(mse_dict)
         print(model.model)
+        sorted_mse = dict(sorted(mse_dict.items(), key=lambda item: item[1]))
+        low_5 = list(sorted_mse)[-5:]
+        for i in low_5:
+            actual = plot_dict[i][0]
+            pred = plot_dict[i][1]
+            print(actual)
+            print(pred)
+            curr = pd.merge(actual, pred, how='inner', left_index=True, right_index=True)
+            fig = px.line(curr, x=curr.index, y=curr.columns)
+            fig.show()
         #print(sqrt(mean_squared_error(predicted,self.te)))
     def get_station(self, column):
         result = adfuller(self.df[column])
