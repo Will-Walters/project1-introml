@@ -116,9 +116,8 @@ class TimeSeries:
         self.te = self.hierarchy_df.iloc[-7:, :]
 
     def train_model(self, model_type):
-        model = HTSRegressor(model=model_type, revision_method='BU', n_jobs=0, transform=True)
+        model = HTSRegressor(model=model_type, revision_method='OLS', n_jobs=12, transform=False)
         model = model.fit(tree=self.ht)
-        print(model.mse)
         print(model)
         predicted = model.predict(steps_ahead=7)
         print(predicted.tail(10))
