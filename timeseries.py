@@ -42,6 +42,7 @@ from statsmodels.tsa.arima.model import ARIMA
 # collections.MutableSet = collections.abc.MutableSet
 # collections.MutableMapping = collections.abc.MutableMapping
 from hts import HTSRegressor
+from hts.hierarchy import HierarchyTree, HierarchyVisualizer
 
         # import VAR model
 from statsmodels.tsa.api import VAR
@@ -77,8 +78,8 @@ class TimeSeries:
     def create_hierarchal(self):
         self.df = self.df.drop(
             columns=['id', 'city', 'state', 'store_type', 'family', 'onpromotion'])
-        self.df["cluster_store"] = self.df.apply(lambda x: f"{x['cluster']}_{x['store_nbr']}", axis=1)
-        df_bottom_level = self.df.pivot(index="date", columns="cluster_store", values="sales")
+        self.df["cluster-store"] = self.df.apply(lambda x: f"{x['cluster']}-{x['store_nbr']}", axis=1)
+        df_bottom_level = self.df.pivot(index="date", columns="cluster-store", values="sales")
         df_middle_level = self.df.groupby(["date", "cluster"]) \
             .sum() \
             .reset_index(drop=False) \
@@ -95,11 +96,18 @@ class TimeSeries:
         print(f"Number of time series at the bottom level: {df_bottom_level.shape[1]}")
         print(f"Number of time series at the middle level: {df_middle_level.shape[1]}")
         clusters = self.df["cluster"].unique()
-        stores = self.df["cluster_store"].unique()
+        stores = self.df["cluster-store"].unique()
         c = list(clusters)
         total = {'total': [str(x) for x in c]}
-        cluster = {str(k): [v for v in stores if v.startswith(str(k)) and len(str(k)) == len((str(v).split("_")[0]))] for k in clusters}
+        cluster = {str(k): [v for v in stores if v.startswith(str(k))] for k in clusters}
         self.hierarchy = {**total, **cluster}
+
+        self.hierarchy_df.columns = self.hierarchy_df.columns.astype(str)
+        ht = HierarchyTree.from_nodes(nodes=self.hierarchy, df=self.hierarchy_df, root='total')
+        print("uhh")
+        print(ht)
+        print(type(ht))
+        self.ht = ht
         # ax = hierarchy_df[hierarchy['total']].plot(title="Sales - cluster level")
         # ax.legend(bbox_to_anchor=(1.0, 1.0))
     def get_train_test_of_hierarchy(self, indexing):
@@ -108,17 +116,12 @@ class TimeSeries:
         self.te = self.hierarchy_df.iloc[-7:, :]
 
     def train_model(self, model_type):
-        model = HTSRegressor(model=model_type, revision_method='BU', n_jobs=0)
-        print(self.tr)
-        print(self.hierarchy)
-        print(self.tr.columns)
-        scaler = StandardScaler().fit(self.tr)
-        scaled = scaler.transform(self.tr)
-        model = model.fit(scaled, self.hierarchy)
+        model = HTSRegressor(model=model_type, revision_method='BU', n_jobs=0, transform=True)
+        model = model.fit(tree=self.ht)
+        print(model.mse)
+        print(model)
         predicted = model.predict(steps_ahead=7)
-        print(predicted.head(10))
-        predicted = scaler.inverse_transform(predicted)
-        print(predicted.head(10))
+        print(predicted.tail(10))
         forecasted = predicted.iloc[-7:,:]
         print(forecasted)
         mse_dict = dict()

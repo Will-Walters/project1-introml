@@ -352,7 +352,7 @@ if __name__ == "__main__":
 
     print(dairy_all_stores.tr)
     print(dairy_all_stores.te)
-    dairy_all_stores.train_model('holt_winters')
+    dairy_all_stores.train_model('auto_arima')
     # store_1_dairy = dairy_all_stores.get_store(1)
     # print(len(store_1_dairy.df))
     # store_1_dairy.drop_unnecessary_for_store()
